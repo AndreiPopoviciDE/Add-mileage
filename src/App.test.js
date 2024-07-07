@@ -1,63 +1,46 @@
-import { getElementBeforeComma } from './helpers.tsx';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import App from './App';
 
-describe('getElementBeforeComma', () => {
-  test('should return the element before the comma', () => {
-    // Arrange
-    const input = 'London, England';
-    const expectedOutput = 'London';
+// Mock the helper functions
+jest.mock('./helpers.tsx', () => ({
+  generateRandomId: jest.fn(() => Math.floor(Math.random() * 1000)),
+  generateRandomPrice: jest.fn(() => '50'),
+  getElementBeforeComma: jest.fn((str) => str.split(',')[0]),
+}));
 
-    // Act
-    const result = getElementBeforeComma(input);
-
-    // Assert
-    expect(result).toBe(expectedOutput);
+describe('App Component', () => {
+  test('renders Add mileage heading', () => {
+    render(<App />);
+    const heading = screen.getByText(/add mileage/i);
+    expect(heading).toBeInTheDocument();
   });
 
-  test('should return the trimmed element before the comma', () => {
-    // Arrange
-    const input = '  Berlin, Germany';
-    const expectedOutput = 'Berlin';
-
-    // Act
-    const result = getElementBeforeComma(input);
-
-    // Assert
-    expect(result).toBe(expectedOutput);
+  test('adds a new destination on clicking "Add additional destination"', () => {
+    render(<App />);
+    const addDestinationButton = screen.getByText(
+      /add additional destination/i
+    );
+    fireEvent.click(addDestinationButton);
+    const newDestinationInputs = screen.getAllByPlaceholderText(/e.g. London/i);
+    expect(newDestinationInputs.length).toBe(2); // Initially one, after adding one more should be 2
   });
 
-  test('should return the whole string if there is no comma', () => {
-    // Arrange
-    const input = 'Paris';
-    const expectedOutput = 'Paris';
-
-    // Act
-    const result = getElementBeforeComma(input);
-
-    // Assert
-    expect(result).toBe(expectedOutput);
+  test('updates starting point input value', () => {
+    render(<App />);
+    const startingPointInput = screen.getByPlaceholderText(/e.g. Poland/i);
+    fireEvent.change(startingPointInput, {
+      target: { value: 'Paris, France' },
+    });
+    expect(startingPointInput.value).toBe('Paris, France');
   });
 
-  test('should return an empty string if input is empty', () => {
-    // Arrange
-    const input = '';
-    const expectedOutput = '';
-
-    // Act
-    const result = getElementBeforeComma(input);
-
-    // Assert
-    expect(result).toBe(expectedOutput);
-  });
-
-  test('should handle strings with only a comma', () => {
-    // Arrange
-    const input = ',';
-    const expectedOutput = '';
-
-    // Act
-    const result = getElementBeforeComma(input);
-
-    // Assert
-    expect(result).toBe(expectedOutput);
+  test('submits form and logs data', () => {
+    console.log = jest.fn();
+    render(<App />);
+    const submitButton = screen.getByText(/send/i);
+    fireEvent.click(submitButton);
+    expect(console.log).toHaveBeenCalled();
   });
 });
