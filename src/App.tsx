@@ -8,6 +8,116 @@ import {
 } from './helpers.tsx';
 import { State, Action } from './types';
 import { appReducer } from './reducer.tsx';
+import { initialState } from './initilaState.tsx';
+
+const App: React.FC = () => {
+  const [state, dispatch] = useReducer<React.Reducer<State, Action>>(
+    appReducer,
+    initialState
+  );
+
+  useEffect(() => {
+    dispatch({ type: 'SET_PRICE', payload: generateRandomPrice() });
+  }, [state.destinations.length]);
+
+  const addDestination = () => {
+    dispatch({ type: 'ADD_DESTINATION' });
+  };
+
+  const updateDestination = (id: number, newValue: string) => {
+    dispatch({
+      type: 'UPDATE_DESTINATION',
+      payload: { id, value: newValue },
+    });
+  };
+
+  const deleteDestination = (id: number) => {
+    dispatch({ type: 'DELETE_DESTINATION', payload: id });
+  };
+
+  const handleExpenseName = useMemo(() => {
+    const destinationsNames = [
+      getElementBeforeComma(state.startpoint.destination),
+      ...state.destinations.map((el) => getElementBeforeComma(el.destination)),
+    ];
+    return destinationsNames.join(' - ');
+  }, [state.startpoint.destination, state.destinations]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = {
+      startpoint: state.startpoint,
+      destinations: state.destinations,
+      vehicle: state.vehicle,
+      price: state.price,
+    };
+    console.log(data);
+  };
+
+  return (
+    <Container>
+      <InnerContainer>
+        <Heading>Add mileage</Heading>
+        <Form onSubmit={handleSubmit}>
+          <React.Fragment>
+            <Label>Starting point</Label>
+            <Input
+              value={state.startpoint.destination}
+              onChange={(e) =>
+                dispatch({
+                  type: 'SET_STARTING_POINT',
+                  payload: e.target.value,
+                })
+              }
+              placeholder="e.g. Poland"
+            />
+          </React.Fragment>
+
+          {state.destinations.map((el) => (
+            <React.Fragment key={el.id}>
+              <Label>Destination</Label>
+              <DestinationItem>
+                <Input
+                  value={el.destination}
+                  onChange={(e) => updateDestination(el.id, e.target.value)}
+                  placeholder="e.g. London"
+                />
+                <DeleteIcon onClick={() => deleteDestination(el.id)}>
+                  🗑️
+                </DeleteIcon>
+              </DestinationItem>
+            </React.Fragment>
+          ))}
+
+          <Paragraph onClick={addDestination}>
+            <AddDestinationIcon>+</AddDestinationIcon> Add additional
+            destination
+          </Paragraph>
+          <React.Fragment>
+            <Label>Vehicle</Label>
+            <Select
+              value={state.vehicle}
+              onChange={(e) =>
+                dispatch({ type: 'SET_VEHICLE', payload: e.target.value })
+              }
+            >
+              <option value="car">Car</option>
+              <option value="airplane">Airplane</option>
+              <option value="train">Train</option>
+            </Select>
+          </React.Fragment>
+          <Label>Expense name</Label>
+          <ReadOnlyInput value={handleExpenseName} readOnly />
+          <Divider />
+          <AmountSendContainer>
+            <SubHeading>Amount: {state.price} &#8364;</SubHeading>
+            <Button type="submit">Send</Button>
+          </AmountSendContainer>
+        </Form>
+      </InnerContainer>
+    </Container>
+  );
+};
 
 const Container = styled.div`
   max-width: 600px;
@@ -22,7 +132,7 @@ const InnerContainer = styled.div`
   padding: 1rem;
 `;
 
-const Heading = styled.div`
+const Heading = styled.h1`
   color: #333;
   text-align: left;
   margin-bottom: 2rem;
@@ -135,129 +245,5 @@ const DeleteIcon = styled.span`
   cursor: pointer;
   margin-left: 0.5rem;
 `;
-
-const initialState: State = {
-  startpoint: {
-    id: generateRandomId(),
-    destination: 'London, England',
-  },
-  destinations: [
-    {
-      id: generateRandomId(),
-      destination: 'Berlin, Germany',
-    },
-  ],
-  vehicle: 'car',
-  price: null,
-};
-
-const App: React.FC = () => {
-  const [state, dispatch] = useReducer<React.Reducer<State, Action>>(
-    appReducer,
-    initialState
-  );
-
-  useEffect(() => {
-    dispatch({ type: 'SET_PRICE', payload: generateRandomPrice() });
-  }, [state.destinations.length]);
-
-  const addDestination = () => {
-    dispatch({ type: 'ADD_DESTINATION' });
-  };
-
-  const updateDestination = (id: number, newValue: string) => {
-    dispatch({
-      type: 'UPDATE_DESTINATION',
-      payload: { id, value: newValue },
-    });
-  };
-
-  const deleteDestination = (id: number) => {
-    dispatch({ type: 'DELETE_DESTINATION', payload: id });
-  };
-
-  const handleExpenseName = useMemo(() => {
-    const destinationsNames = [
-      getElementBeforeComma(state.startpoint.destination),
-      ...state.destinations.map((el) => getElementBeforeComma(el.destination)),
-    ];
-    return destinationsNames.join(' - ');
-  }, [state.startpoint.destination, state.destinations]);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = {
-      startpoint: state.startpoint,
-      destinations: state.destinations,
-      vehicle: state.vehicle,
-      price: state.price,
-    };
-    console.log(data);
-  };
-
-  return (
-    <Container>
-      <InnerContainer>
-        <Heading>Add mileage</Heading>
-        <Form onSubmit={handleSubmit}>
-          <React.Fragment>
-            <Label>Starting point</Label>
-            <Input
-              value={state.startpoint.destination}
-              onChange={(e) =>
-                dispatch({
-                  type: 'SET_STARTING_POINT',
-                  payload: e.target.value,
-                })
-              }
-              placeholder="e.g. Poland"
-            />
-          </React.Fragment>
-
-          {state.destinations.map((el) => (
-            <React.Fragment key={el.id}>
-              <Label>Destination</Label>
-              <DestinationItem>
-                <Input
-                  value={el.destination}
-                  onChange={(e) => updateDestination(el.id, e.target.value)}
-                  placeholder="e.g. London"
-                />
-                <DeleteIcon onClick={() => deleteDestination(el.id)}>
-                  🗑️
-                </DeleteIcon>
-              </DestinationItem>
-            </React.Fragment>
-          ))}
-
-          <Paragraph onClick={addDestination}>
-            <AddDestinationIcon>+</AddDestinationIcon> Add additional
-            destination
-          </Paragraph>
-          <React.Fragment>
-            <Label>Vehicle</Label>
-            <Select
-              value={state.vehicle}
-              onChange={(e) =>
-                dispatch({ type: 'SET_VEHICLE', payload: e.target.value })
-              }
-            >
-              <option value="car">Car</option>
-              <option value="airplane">Airplane</option>
-              <option value="train">Train</option>
-            </Select>
-          </React.Fragment>
-          <Label>Expense name</Label>
-          <ReadOnlyInput value={handleExpenseName} readOnly />
-          <Divider />
-          <AmountSendContainer>
-            <SubHeading>Amount: {state.price} &#8364;</SubHeading>
-            <Button type="submit">Send</Button>
-          </AmountSendContainer>
-        </Form>
-      </InnerContainer>
-    </Container>
-  );
-};
 
 export default App;
